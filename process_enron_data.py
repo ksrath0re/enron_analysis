@@ -2,10 +2,14 @@ import os, sys, email, re
 import numpy as np
 import pandas as pd
 import json
+from dateutil.parser import parse
 
-emails_df = pd.read_csv('./data/emails.csv')
+emails_df = pd.read_csv('./data/emails.csv', nrows=100)
+#emails_df = pd.read_csv('./data/emails.csv') #Uncomment this line to read all the data
 print(emails_df.shape)
-#print(emails_df.head())
+
+
+# print(emails_df.head())
 
 
 def get_content_from_email(msg):
@@ -71,3 +75,27 @@ for row in emails_df.itertuples(index=False):
 with open('sender_receiver_pd.json', 'w') as fp:
     json.dump(sender_receiver, fp)
 print("Result saved to Json file")
+
+
+def check_messages_sum(sender, receiver, from_date, to_date):
+    total_messages = 0
+    key = (sender, receiver)
+    key = str(key)
+    print(key)
+    if key in sender_receiver.keys():
+        messages = sender_receiver[key]
+        for msg in messages:
+            if from_date <= parse(msg['Date']).date() <= to_date:
+                total_messages += 1
+    else:
+        print("They never communicated.")
+    print(" Total exchanged messages between {} and {} is : {}".format(sender, receiver, total_messages))
+    return total_messages
+
+
+sndr = 'phillip.allen@enron.com'
+rcvr = 'john.lavorato@enron.com'
+from_date = parse('5 Sep 2000').date()
+to_date = parse('4 May 2001').date()
+num_msgs = check_messages_sum(sndr, rcvr, from_date, to_date)
+print(num_msgs)
