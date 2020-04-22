@@ -141,3 +141,15 @@ for k, v in sender_receiver.items():
 
 with open('clean_data.json', 'w') as fps2:
     json.dump(sender_receiver, fps2)
+
+
+# Selecting only those pairs who have more than 5 messages exchanged between them.
+filtered_data = {}
+print("printing the pair name which we will consider ... ")
+for k, v in sender_receiver.items():
+    if len(v) > 5:
+        filtered_data[k] = v
+        print(k)
+
+with open('test_file.json', 'w') as fpq:
+    json.dump(filtered_data, fpq)
