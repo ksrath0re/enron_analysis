@@ -3,9 +3,16 @@ import numpy as np
 import pandas as pd
 import json
 from dateutil.parser import parse
+import nltk
+from nltk.tokenize.regexp import RegexpTokenizer
+from nltk.corpus import stopwords
+from nltk.stem.wordnet import WordNetLemmatizer
+from nltk.stem.porter import PorterStemmer
+import string
+from datetime import datetime
 
 emails_df = pd.read_csv('./data/emails.csv', nrows=100)
-#emails_df = pd.read_csv('./data/emails.csv') #Uncomment this line to read all the data
+# emails_df = pd.read_csv('./data/emails.csv') #Uncomment this line to read all the data
 print(emails_df.shape)
 
 
@@ -99,3 +106,38 @@ from_date = parse('5 Sep 2000').date()
 to_date = parse('4 May 2001').date()
 num_msgs = check_messages_sum(sndr, rcvr, from_date, to_date)
 print(num_msgs)
+
+# sorted the list of dictionaries based on email date which will help later
+# in deciding different timeperiods
+for item in sender_receiver.keys():
+    sender_receiver[item] = sorted(sender_receiver[item], key=lambda x: parse(x['Date']))
+
+
+# Code for cleaning the content part of the email so that we can do topic modeling
+def clean_data(text):
+    stop = set(stopwords.words('english'))
+    stop.update(("to", "cc", "subject", "http", "from", "sent",
+                 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"))
+    exclude = set(string.punctuation)
+    lemma = WordNetLemmatizer()
+
+    text = text.rstrip()
+    text = re.sub(r'[^a-zA-Z]', ' ', text)
+    stop_free = " ".join([i for i in text.lower().split() if ((i not in stop) and (not i.isdigit()))])
+    punc_free = ''.join(ch for ch in stop_free if ch not in exclude)
+    normalized = " ".join(lemma.lemmatize(word) for word in punc_free.split())
+
+    return normalized
+
+
+# List of unnecessary parts of email message
+removable_data = ['Mime-Version', 'Content-Transfer-Encoding', 'Content-Type', 'X-FileName', 'X-Origin', 'X-Folder']
+
+for k, v in sender_receiver.items():
+    for msg in v:
+        msg['content'] = clean_data(msg['content'])
+        for item in removable_data:
+            msg.pop(item, None)
+
+with open('clean_data.json', 'w') as fps2:
+    json.dump(sender_receiver, fps2)
