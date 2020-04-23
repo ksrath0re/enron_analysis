@@ -10,6 +10,7 @@ from nltk.stem.wordnet import WordNetLemmatizer
 from nltk.stem.porter import PorterStemmer
 import string
 from datetime import datetime
+import gensim
 
 emails_df = pd.read_csv('./data/emails.csv', nrows=100)
 # emails_df = pd.read_csv('./data/emails.csv') #Uncomment this line to read all the data
@@ -114,10 +115,15 @@ for item in sender_receiver.keys():
 
 
 # Code for cleaning the content part of the email so that we can do topic modeling
-def clean_data(text):
+def clean_data(text, msg):
     stop = set(stopwords.words('english'))
-    stop.update(("to", "cc", "subject", "http", "from", "sent",
+    stop.update(("to", "cc", "subject", "http", "from", "sent", "allan", "allen"
                  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"))
+    names_to = msg["To"][0].split('@')[0].split('.')
+    names_from = msg["From"][0].split('@')[0].split('.')
+    names_from.extend(names_to)
+    # Removing names appearing in the content
+    stop.update(names_from)
     exclude = set(string.punctuation)
     lemma = WordNetLemmatizer()
 
@@ -135,7 +141,8 @@ removable_data = ['Mime-Version', 'Content-Transfer-Encoding', 'Content-Type', '
 
 for k, v in sender_receiver.items():
     for msg in v:
-        msg['content'] = clean_data(msg['content'])
+        msg['content'] = clean_data(msg['content'], msg)
+        msg['split-content'] = msg['content'].split()
         for item in removable_data:
             msg.pop(item, None)
 
@@ -147,9 +154,56 @@ with open('clean_data.json', 'w') as fps2:
 filtered_data = {}
 print("printing the pair name which we will consider ... ")
 for k, v in sender_receiver.items():
-    if len(v) > 5:
+    if len(v) > 2:
         filtered_data[k] = v
         print(k)
 
 with open('test_file.json', 'w') as fpq:
     json.dump(filtered_data, fpq)
+
+results = {}
+# clean_text = []
+# # for k, v in filtered_data.items():
+
+for k, v in filtered_data.items():
+    timeperiod_1 = []
+    timeperiod_2 = []
+    first_date = parse(v[0]['Date']).date()
+    last_date = parse(v[-1]['Date']).date()
+    mid_date = first_date + (last_date-first_date)/2
+    for msg in v:
+        if parse(msg['Date']).date() < mid_date:
+            timeperiod_1.extend(msg['split-content'])
+        else:
+            timeperiod_2.extend(msg['split-content'])
+    results[k] = {'time_period_1' : timeperiod_1, 'time_period_2' : timeperiod_2}
+
+with open('results.json', 'w') as rs:
+    json.dump(results, rs)
+
+k = "('phillip.allen@enron.com', 'ina.rangel@enron.com')"
+processed_mail = [results[k]['time_period_1']]
+dictionary = gensim.corpora.Dictionary(processed_mail)
+print(dictionary)
+# count = 0
+# for k, v in dictionary.iteritems():
+#     print(k, v)
+#     count += 1
+#     if count > 50:
+#         break
+
+bow_corpus = [dictionary.doc2bow(mail) for mail in processed_mail]
+print(len(bow_corpus))
+
+bow_corpus_0 = bow_corpus[0]
+for i in range(len(bow_corpus_0)):
+    print("Word {} (\"{}\") appears {} time.".format(bow_corpus_0[i][0],
+                                                     dictionary[bow_corpus_0[i][0]],
+                                                     bow_corpus_0[i][1]))
+
+# Building LDA model for topic modeling
+lda_model = gensim.models.LdaMulticore(bow_corpus, num_topics=3, id2word=dictionary, passes=5, workers=2)
+
+
+for idx, topic in lda_model.print_topics(-1):
+    print('Topic: {} \nWords: {}'.format(idx, topic))
