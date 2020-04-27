@@ -11,9 +11,9 @@ from nltk.stem.porter import PorterStemmer
 import string
 from datetime import datetime
 import gensim
-
-emails_df = pd.read_csv('./data/emails.csv', nrows=100)
-# emails_df = pd.read_csv('./data/emails.csv') #Uncomment this line to read all the data
+#nltk.download('all')
+emails_df = pd.read_csv('./emails.csv', nrows=5000)
+#emails_df = pd.read_csv('./emails.csv') #Uncomment this line to read all the data
 print(emails_df.shape)
 
 
@@ -78,11 +78,11 @@ for row in emails_df.itertuples(index=False):
         with open("error.txt", "a") as text_file, open("raw_files.txt", "a") as raw_file:
             text_file.write("for line : {} , Error item is : {}\n".format(i, row))
             raw_file.write("{}\n".format(str(row['file'])))
-    print("Processed {} records! ".format(i))
+    #print("Processed {} records! ".format(i))
 
-with open('sender_receiver_pd.json', 'w') as fp:
-    json.dump(sender_receiver, fp)
-print("Result saved to Json file")
+# with open('sender_receiver_pd.json', 'w') as fp:
+#     json.dump(sender_receiver, fp)
+# print("Result saved to Json file")
 
 
 def check_messages_sum(sender, receiver, from_date, to_date):
@@ -156,7 +156,7 @@ print("printing the pair name which we will consider ... ")
 for k, v in sender_receiver.items():
     if len(v) > 2:
         filtered_data[k] = v
-        print(k)
+        #print(k)
 
 with open('test_file.json', 'w') as fpq:
     json.dump(filtered_data, fpq)
@@ -170,7 +170,8 @@ for k, v in filtered_data.items():
     timeperiod_2 = []
     first_date = parse(v[0]['Date']).date()
     last_date = parse(v[-1]['Date']).date()
-    mid_date = first_date + (last_date-first_date)/2
+    mid_date = parse('12 Feb 2001').date()
+    #print("mid date : ", mid_date)
     for msg in v:
         if parse(msg['Date']).date() < mid_date:
             timeperiod_1.extend(msg['split-content'])
@@ -182,28 +183,35 @@ with open('results.json', 'w') as rs:
     json.dump(results, rs)
 
 k = "('phillip.allen@enron.com', 'ina.rangel@enron.com')"
-processed_mail = [results[k]['time_period_1']]
-dictionary = gensim.corpora.Dictionary(processed_mail)
-print(dictionary)
-# count = 0
-# for k, v in dictionary.iteritems():
-#     print(k, v)
-#     count += 1
-#     if count > 50:
-#         break
+k = "('phillip.allen@enron.com', 'tim.belden@enron.com')"
+k = "('phillip.allen@enron.com', 'jacquestc@aol.com')"
+def topic_model_analysis(processed_mail):
+    dictionary = gensim.corpora.Dictionary(processed_mail)
+    print(dictionary)
+    # count = 0
+    # for k, v in dictionary.iteritems():
+    #     print(k, v)
+    #     count += 1
+    #     if count > 50:
+    #         break
 
-bow_corpus = [dictionary.doc2bow(mail) for mail in processed_mail]
-print(len(bow_corpus))
+    bow_corpus = [dictionary.doc2bow(mail) for mail in processed_mail]
+    print(len(bow_corpus))
 
-bow_corpus_0 = bow_corpus[0]
-for i in range(len(bow_corpus_0)):
-    print("Word {} (\"{}\") appears {} time.".format(bow_corpus_0[i][0],
-                                                     dictionary[bow_corpus_0[i][0]],
-                                                     bow_corpus_0[i][1]))
+    bow_corpus_0 = bow_corpus[0]
+    # for i in range(len(bow_corpus_0)):
+    #     print("Word {} (\"{}\") appears {} time.".format(bow_corpus_0[i][0],
+    #                                                      dictionary[bow_corpus_0[i][0]],
+    #                                                      bow_corpus_0[i][1]))
 
-# Building LDA model for topic modeling
-lda_model = gensim.models.LdaMulticore(bow_corpus, num_topics=3, id2word=dictionary, passes=5, workers=2)
+    # Building LDA model for topic modeling
+    lda_model = gensim.models.LdaMulticore(bow_corpus, num_topics=3, id2word=dictionary, passes=10, workers=2)
 
 
-for idx, topic in lda_model.print_topics(-1):
-    print('Topic: {} \nWords: {}'.format(idx, topic))
+    for idx, topic in lda_model.print_topics(-1):
+        print('Topic: {} \nWords: {}'.format(idx, topic))
+
+processed_mail_1 = [results[k]['time_period_1']]
+topic_model_analysis(processed_mail_1)
+processed_mail_2 = [results[k]['time_period_2']]
+topic_model_analysis(processed_mail_2)
