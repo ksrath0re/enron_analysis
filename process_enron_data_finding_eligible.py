@@ -15,11 +15,10 @@ import gensim
 import pyLDAvis.gensim as gensimvis
 import pyLDAvis
 from IPython.core.display import HTML
-
-# nltk.download('all')
-# nltk.download('averaged_perceptron_tagger')
+#nltk.download('all')
+#nltk.download('averaged_perceptron_tagger')
 emails_df = pd.read_csv('data/emails.csv', nrows=1000)
-# emails_df = pd.read_csv('./emails.csv') #Uncomment this line to read all the data
+#emails_df = pd.read_csv('./emails.csv') #Uncomment this line to read all the data
 print(emails_df.shape)
 
 
@@ -84,8 +83,7 @@ for row in emails_df.itertuples(index=False):
         with open("error.txt", "a") as text_file, open("raw_files.txt", "a") as raw_file:
             text_file.write("for line : {} , Error item is : {}\n".format(i, row))
             raw_file.write("{}\n".format(str(row['file'])))
-    # print("Processed {} records! ".format(i))
-
+    #print("Processed {} records! ".format(i))
 
 # with open('sender_receiver_pd.json', 'w') as fp:
 #     json.dump(sender_receiver, fp)
@@ -124,14 +122,13 @@ for item in sender_receiver.keys():
 # Code for cleaning the content part of the email so that we can do topic modeling
 def clean_data(text, msg):
     stop = set(stopwords.words('english'))
-    stop.update(("to", "cc", "subject", "http", "from", "sent", "allan", "allen", "can", "could", "will", "would",
-                 "shall", "should"
-                          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"))
+    stop.update(("to", "cc", "subject", "http", "from", "sent", "allan", "allen", "can", "could", "will", "would", "shall", "should"
+                 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"))
     names_to = msg["To"][0].split('@')[0].split('.')
     names_from = msg["From"][0].split('@')[0].split('.')
     names_from.extend(names_to)
     # Removing names appearing in the content
-    # print("names : ", names_from)
+    #print("names : ", names_from)
     stop.update(names_from)
     stop.update(names_to)
     exclude = set(string.punctuation)
@@ -139,9 +136,6 @@ def clean_data(text, msg):
 
     text = text.rstrip()
     text = re.sub(r'[^a-zA-Z]', ' ', text)
-    # tagged_text = nltk.tag.pos_tag(text.split())
-    # edited_sentence = [word for word, tag in tagged_text if tag != 'NNP' and tag != 'NNPS' and tag != 'MD']
-    # names_free = ''.join(edited_sentence)
     stop_free = " ".join([i for i in text.lower().split() if ((i not in stop) and (not i.isdigit()) and (len(i) > 3))])
     punc_free = ''.join(ch for ch in stop_free if ch not in exclude)
     normalized = " ".join(lemma.lemmatize(word) for word in punc_free.split())
@@ -162,16 +156,14 @@ for k, v in sender_receiver.items():
 with open('clean_data.json', 'w') as fps2:
     json.dump(sender_receiver, fps2)
 
+
 # Selecting only those pairs who have more than 5 messages exchanged between them.
 filtered_data = {}
 print("printing the pair name which we will consider ... ")
 for k, v in sender_receiver.items():
     if len(v) > 2:
         filtered_data[k] = v
-        print(k)
-
-with open('test_file.json', 'w') as fpq:
-    json.dump(filtered_data, fpq)
+        #print(k)
 
 results = {}
 # clean_text = []
@@ -183,17 +175,18 @@ for k, v in filtered_data.items():
     first_date = parse(v[0]['Date']).date()
     last_date = parse(v[-1]['Date']).date()
     mid_date = parse('12 Feb 2001').date()
-    # print("mid date : ", mid_date)
+    #print("mid date : ", mid_date)
     for msg in v:
         if parse(msg['Date']).date() < mid_date:
             timeperiod_1.extend(msg['split-content'])
         else:
             timeperiod_2.extend(msg['split-content'])
-    results[k] = {'time_period_1': timeperiod_1, 'time_period_2': timeperiod_2}
+    results[k] = {'time_period_1' : timeperiod_1, 'time_period_2' : timeperiod_2}
 
-with open('results.json', 'w') as rs:
-    json.dump(results, rs)
+# with open('results.json', 'w') as rs:
+#     json.dump(results, rs)
 
+# Old testing pairs
 # k = "('phillip.allen@enron.com', 'ina.rangel@enron.com')"
 # k = "('phillip.allen@enron.com', 'tim.belden@enron.com')"
 # k = "('phillip.allen@enron.com', 'jacquestc@aol.com')"
@@ -202,13 +195,12 @@ with open('results.json', 'w') as rs:
 # k = "('phillip.allen@enron.com', 'monique.sanchez@enron.com')"
 # k = "('phillip.allen@enron.com', 'jane.tholt@enron.com')"
 # k = "('phillip.allen@enron.com', 'steven.south@enron.com')"
-# # k = "('phillip.allen@enron.com', 'tara.sweitzer@enron.com')"
-# pair = make_tuple(k)
+# k = "('phillip.allen@enron.com', 'felix.buitron@enron.com')"
 
 
-def topic_model_analysis(processed_mail, topic_file, timeperiod=1):
+def topic_model_analysis(processed_mail, topic_file, timepeiod=1):
     dictionary = gensim.corpora.Dictionary(processed_mail)
-    print(dictionary)
+    #print(dictionary)
 
     # count = 0
     # for k, v in dictionary.iteritems():
@@ -216,67 +208,40 @@ def topic_model_analysis(processed_mail, topic_file, timeperiod=1):
     #     count += 1
     #     if count > 50:
     #         break
+    if len(dictionary) != 0:
+        bow_corpus = [dictionary.doc2bow(mail) for mail in processed_mail]
+        #print("bow corpus :  ", bow_corpus)
 
-    bow_corpus = [dictionary.doc2bow(mail) for mail in processed_mail]
-    # print("bow corpus :  ", bow_corpus)
+        bow_corpus_0 = bow_corpus[0]
+        # for i in range(len(bow_corpus_0)):
+        #     print("Word {} (\"{}\") appears {} time.".format(bow_corpus_0[i][0],
+        #                                                      dictionary[bow_corpus_0[i][0]],
+        #                                                      bow_corpus_0[i][1]))
 
-    bow_corpus_0 = bow_corpus[0]
-    # for i in range(len(bow_corpus_0)):
-    #     print("Word {} (\"{}\") appears {} time.".format(bow_corpus_0[i][0],
-    #                                                      dictionary[bow_corpus_0[i][0]],
-    #                                                      bow_corpus_0[i][1]))
-
-    # Building LDA model for topic modeling
-    lda_model = gensim.models.LdaMulticore(bow_corpus, num_topics=10, id2word=dictionary, passes=50, workers=2)
-    with open(topic_file, 'a') as tf:
-        tf.write("For Time period {} \n---------------- \n".format(timeperiod))
-        tokens = ', '.join(dictionary.values())
-        tf.write("tokens : " + tokens + '\n')
-    for idx, topic in lda_model.print_topics(-1):
-        print('Topic: {} \nWords: {}'.format(idx, topic))
-        with open(topic_file, 'a') as tf:
-            tf.write('Topic: {} \nWords: {}\n'.format(idx, topic))
-    with open(topic_file, 'a') as tf:
-        tf.write('\n')
-    top_topic_terms = lda_model.get_topic_terms(idx, topn=10)
-    # for wordId, val in top_topic_terms:
-    #     print(dictionary[wordId], val)
-    return lda_model, bow_corpus, dictionary
+        # Building LDA model for topic modeling
+        lda_model = gensim.models.LdaMulticore(bow_corpus, num_topics=10, id2word=dictionary, passes=50, workers=2)
+        # with open(topic_file, 'a') as tf:
+        #     tf.write("For Time period {} \n---------------- \n".format(timepeiod))
+        #     tokens = ', '.join(dictionary.values())
+        #     tf.write("tokens : " + tokens + '\n')
+        # for idx, topic in lda_model.print_topics(-1):
+        #     print('Topic: {} \nWords: {}'.format(idx, topic))
+        #     with open(topic_file, 'a') as tf:
+        #         tf.write('Topic: {} \nWords: {}\n'.format(idx, topic))
+        # with open(topic_file, 'a') as tf:
+        #     tf.write('\n')
+        # top_topic_terms = lda_model.get_topic_terms(idx, topn=10)
+        # for wordId, val in top_topic_terms:
+        #     print(dictionary[wordId], val)
+        return lda_model, bow_corpus, dictionary
+    else:
+        return None, None, None
 
 
-eligibile_pairs = ["('phillip.allen@enron.com', 'tim.belden@enron.com')",
-                   "('phillip.allen@enron.com', 'john.lavorato@enron.com')",
-                   "('phillip.allen@enron.com', 'randall.gay@enron.com')",
-                   "('phillip.allen@enron.com', 'stagecoachmama@hotmail.com')",
-                   "('phillip.allen@enron.com', 'keith.holst@enron.com')",
-                   "('phillip.allen@enron.com', 'ina.rangel@enron.com')",
-                   "('phillip.allen@enron.com', 'pallen70@hotmail.com')",
-                   "('phillip.allen@enron.com', 'stouchstone@natsource.com')",
-                   "('phillip.allen@enron.com', 'jsmith@austintx.com')",
-                   "('phillip.allen@enron.com', 'james.steffes@enron.com')",
-                   "('phillip.allen@enron.com', 'cbpres@austin.rr.com')",
-                   "('phillip.allen@enron.com', 'tori.kuykendall@enron.com')",
-                   "('phillip.allen@enron.com', 'frank.hayden@enron.com')",
-                   "('phillip.allen@enron.com', 'frank.ermis@enron.com')",
-                   "('phillip.allen@enron.com', 'mike.grigsby@enron.com')",
-                   "('phillip.allen@enron.com', 'jay.reitmeyer@enron.com')",
-                   "('phillip.allen@enron.com', 'matthew.lenhart@enron.com')",
-                   "('phillip.allen@enron.com', 'colleen.sullivan@enron.com')",
-                   "('phillip.allen@enron.com', 'matt.smith@enron.com')",
-                   "('phillip.allen@enron.com', 'jane.tholt@enron.com')",
-                   "('phillip.allen@enron.com', 'steven.south@enron.com')",
-                   "('phillip.allen@enron.com', 'al.pollard@enron.com')",
-                   "('phillip.allen@enron.com', 'jeff.richter@enron.com')",
-                   "('phillip.allen@enron.com', 'robert.badeer@enron.com')",
-                   "('phillip.allen@enron.com', 'monique.sanchez@enron.com')",
-                   "('phillip.allen@enron.com', 'susan.scott@enron.com')",
-                   "('phillip.allen@enron.com', 'mary.gray@enron.com')",
-                   "('phillip.allen@enron.com', 'andrea.richards@enron.com')",
-                   "('phillip.allen@enron.com', 'chad.landry@enron.com')",
-                   "('phillip.allen@enron.com', 'llewter@austin.rr.com')",
-                   "('phillip.allen@enron.com', 'jacquestc@aol.com')"]
-
-for k in eligibile_pairs:
+#person_pair = pair[0].split('@')[0] + '-' + pair[1].split('@')[0]
+# topic_file = person_pair+'-topic-file.txt'
+print("checking eligible names :")
+for k in results.keys():
     pair = make_tuple(k)
     person_pair = pair[0].split('@')[0] + '-' + pair[1].split('@')[0]
     topic_file = person_pair + '-topic-file.txt'
@@ -285,8 +250,11 @@ for k in eligibile_pairs:
     processed_mail_2 = [results[k]['time_period_2']]
     lda_for_2, corpus2, dic2 = topic_model_analysis(processed_mail_2, topic_file, timepeiod=2)
 
+    if dic1 is not None and dic2 is not None:
+        # print(\" +k+\")
+        print(f'"{k}"')
+
 # doc_topic_dist = np.array()
 # vis_data_1 = gensimvis.prepare(lda_for_1, corpus1, dic1, R=10)
 # vis_data_2 = gensimvis.prepare(lda_for_2, corpus2, dic2, R=10)
 # pyLDAvis.show(vis_data_2)
-#Uncomment above lines to see the visualization
